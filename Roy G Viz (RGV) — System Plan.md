@@ -135,7 +135,8 @@ The bus is one Null CHOP at the project frame rate, one sample per frame. Audio-
 | --- | --- | --- | --- |
 | `audio/level`, `audio/low`, `audio/mid`, `audio/high` | 0–1 | uni | yes |
 | `audio/kick`, `audio/hat` | 0 or 1, one frame | uni | yes, as pulses |
-| `clock/bpm` | ramp BPM (felt on Internal, session BPM on Link and Pro DJ Link) | raw | no |
+| `audio/breakdown` | 0 or 1, sustained | uni | yes |
+| `clock/bpm` | ramp BPM (felt on Internal/Tap, session BPM on Pro DJ Link) | raw | no |
 | `clock/feel` | 0.5, 1, or 2 | raw | no |
 | `clock/beat`, `clock/bar` | 0–1 | uni | yes |
 | `clock/beat_pulse`, `clock/bar_pulse` | 0 or 1, one frame | uni | yes, as pulses |
@@ -223,8 +224,9 @@ One `audio` COMP turns the input into bus channels and an FFT texture. Analysis 
 5. **Band gain.** Math CHOP per band, after the frame reduce, before the display lag.
 6. **Clean-up.** Gate the display envelopes below a noise floor, then Limit to 0–1.
 7. **Onsets.** Kick and hat are a separate audio-rate path: the derivative of a short (unlagged) envelope, a threshold, and a peak-hold, published as a one-frame pulse. They do not read the lagged display envelopes.
-8. **FFT texture.** 1024-point spectrum. The texture is 512×1, R channel only, so it stays a one-pixel-tall ramp under the Non-Commercial width exemption. Horizontal position is log frequency from 20 Hz to Nyquist. Level is dB from −80 to 0, mapped to 0–1. Generators sample `x` as log frequency and read R. No generator assumes a 2D spectrogram.
-9. **Out.** The frame-rate channels merge into the bus. Meters in the UI read the same channels.
+8. **Breakdown.** Low-band average into a Trail window, then depth = max − min over that buffer. When depth is below the breakdown threshold, publish `audio/breakdown` = 1 for the whole section (sustained gate, not a one-frame pulse). Does not use lagged display envelopes.
+9. **FFT texture.** 1024-point spectrum. The texture is 512×1, R channel only, so it stays a one-pixel-tall ramp under the Non-Commercial width exemption. Horizontal position is log frequency from 20 Hz to Nyquist. Level is dB from −80 to 0, mapped to 0–1. Generators sample `x` as log frequency and read R. No generator assumes a 2D spectrogram.
+10. **Out.** The frame-rate channels merge into the bus. Meters in the UI read the same channels.
 
 | Parameter | Range | Default | Curve |
 | --- | --- | --- | --- |
@@ -236,6 +238,8 @@ One `audio` COMP turns the input into bus channels and an FFT texture. Analysis 
 | Release (per band) | 20–2000 ms | 150 ms | lin |
 | Noise gate | 0–0.2 | 0.02 | lin |
 | Onset threshold | 0–1 | 0.5 | lin |
+| Breakdown window | 0.5–16 s | 4 s | lin |
+| Breakdown threshold | 0–1 | 0.05 | lin |
 
 These are contract parameters. Crossover uses the exp map so knob travel is musical. Every Lag and filter time in this COMP is in milliseconds, so a project fps change does not retune the feel.
 
@@ -245,20 +249,19 @@ One `clock` COMP owns tempo and phase and publishes the `clock/*` channels. Ever
 
 | Source | How | Notes |
 | --- | --- | --- |
-| Internal | Beat CHOP driven by a BPM parameter | Default, and the fallback |
+| Internal | Free-run phase engine driven by a BPM parameter | Default, and the fallback |
 | Tap | Keyboard, pad or UI button into a Python tap handler | Average the last 4–8 taps, drop taps more than 15% off, reset after a 2 s gap |
-| Ableton Link | Ableton Link CHOP | Joins a Link session on the network |
-| Pro DJ Link | TD ProLink, inside TouchDesigner | Follows the master deck. See below |
+| Pro DJ Link | TD ProLink, inside TouchDesigner | Follows the master deck via `PushPacket`. See below |
 
 `clock/bpm` is the tempo the beat ramp is built from, and `clock/beat` is that ramp. Half and double set `clock/feel` to 0.5, 1, or 2. `clock/bar` stays on the source signature so downbeats still match the session.
 
-On Internal, feel changes the Beat CHOP BPM directly, `clock/bpm` shows that felt tempo, and the ramp comes from the Beat CHOP alone. On Link and on Pro DJ Link, `clock/bpm` stays at the session tempo and only `clock/beat` and `clock/beat_pulse` run at `feel` times that tempo. The session BPM is left alone, so a half-time look does not push a halved tempo back at the other peers. Feel is applied once, in the place that matches the source.
+On Internal and Tap, feel multiplies the local BPM, `clock/bpm` shows that felt tempo, and the ramp runs at the felt rate. On Pro DJ Link, `clock/bpm` stays at the session tempo and only `clock/beat` and `clock/beat_pulse` run at `feel` times that tempo. The session BPM is left alone, so a half-time look does not push a halved tempo back at the players. Feel is applied once, in the place that matches the source. Packet ingest (`ClockExt.PushPacket`) and phase slew ship before Pro DJ Link is connected so the network adapter only has to feed packets.
 
-**Signature.** A clock setting, default 4/4. The Ableton Link CHOP's `signature` is this local value. Bar phase lines up with other peers when their quantum matches it. RGV does not read a quantum from the session. Pro DJ Link bar position uses beat-within-bar when the player sends it, interpreted in this same signature.
+**Signature.** A clock setting, default 4/4. Bar length is this local value. Pro DJ Link bar position uses beat-within-bar when the player sends it, interpreted in this same signature.
 
 **Downbeat.** A Resync button sets beat phase to 0. That is the only hard reset.
 
-**Nudge.** Hold-to-nudge buttons shift phase without changing BPM. On Link and Pro DJ Link, nudge is an extra latency bias for the visual clock.
+**Nudge.** Hold-to-nudge buttons shift phase without changing BPM. On Pro DJ Link, nudge is an extra latency bias for the visual clock.
 
 **Dropout.** If a network source goes silent for 2 s, hold the last BPM, keep the ramp free-running, and show a warning in the tempo bar. The source the operator picked stays selected. When packets return, the clock rejoins that source and phase slews onto the new packets. It does not snap.
 
@@ -440,7 +443,7 @@ A preset is a JSON snapshot of addresses and values. Loading one sets switch ind
 | Session | Tempo source, signature, feel, latency offset, performance latches | How the show is running right now |
 | RGV settings | Resolution, display device path, audio device, free-license cap | One per venue |
 
-Scene scope stops at the picture and the modulation written into that scene. Tempo source, signature, latency, feel, blackout, freeze, FX kill, layer bypass, and solo stay as session state. A scene may store an Internal BPM hint. That hint is applied only when the live source is Internal, and it is applied as a cut on the quantize boundary. When the live source is Link or Pro DJ Link, the hint is ignored and the session tempo keeps running.
+Scene scope stops at the picture and the modulation written into that scene. Tempo source, signature, latency, feel, blackout, freeze, FX kill, layer bypass, and solo stay as session state. A scene may store an Internal BPM hint. That hint is applied only when the live source is Internal, and it is applied as a cut on the quantize boundary. When the live source is Pro DJ Link, the hint is ignored and the session tempo keeps running.
 
 ### Recall order
 
@@ -493,7 +496,7 @@ v1 sends one rectangular raster. An LED processor maps that raster onto the wall
 Build the backbone first, then add modules. Each phase ends with something you can play. Phase 1 is done only when the three parameter values stay apart under a moving modulator.
 
 1. **Skeleton.** RGV COMP, `parent.Rgv`, bus schema, ParamEngine, `mod_eval` with a dummy LFO, one layer, one generator, output window. Acceptance: the custom parameter is the base, the knob does not drift while the LFO runs, and the generator reads the mapped channel through an export or an expression.
-2. **Audio and clock.** Audio module with the frame-reduce and the separate onset path. Internal, Tap, and Ableton Link. Signature is an explicit setting. On Internal, half and double change BPM. On Link, they scale the beat ramp and leave the session BPM alone. Phase slew is in place for a packet source even before Pro DJ Link is connected.
+2. **Audio and clock.** Audio module with the frame-reduce, the separate onset path, and breakdown detection. Internal and Tap. Signature is an explicit setting. On Internal, half and double change BPM. On a packet source (Pro DJ Link later), they scale the beat ramp and leave the session BPM alone. Phase slew is in place for a packet source even before Pro DJ Link is connected.
 3. **Modulation.** The fixed evaluator, staged modulators, macros, hard switches, mod rings.
 4. **MIDI learn.** One learn flag, one destination per control, pickup stored in the profile, APC generic-MIDI template, iControls iMap file, hardware Shift, LED feedback.
 5. **Stack.** 3 or 4 layers (an RGV setting), blend modes in premultiplied alpha, one FX instance per slot, Switch TOP banks, master FX, blackout after the stack.
