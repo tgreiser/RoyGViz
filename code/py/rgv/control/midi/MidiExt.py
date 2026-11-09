@@ -508,6 +508,30 @@ class MidiExt:
 			self._do_select(dest)
 			return
 
+		if kind == 'bank':
+			# dest: bank:layer:index  e.g. bank:1:0
+			if row['msg'] == 'note' and not _is_note_on(message, value):
+				return
+			parts = dest.split(':')
+			if len(parts) >= 3:
+				layer_i = int(parts[1])
+				bank_i = int(parts[2])
+				rg = self._rgv()
+				if hasattr(rg, 'SetBankIndex'):
+					rg.SetBankIndex(layer_i, bank_i)
+				else:
+					layer = rg.op(f'layers/layer{layer_i}')
+					if layer is not None:
+						layer.par.Bankindex.val = bank_i
+			self.UpdateLeds()
+			return
+
+		if kind == 'layer_opacity':
+			# dest: layer1/opacity
+			u = self._incoming_01(row, value)
+			self._write_layer_opacity(dest, u, mode, row, key, message, value)
+			return
+
 		if kind == 'par':
 			u = self._incoming_01(row, value)
 			self._write_par_path(dest, u, mode, row, key, message, value)
@@ -716,11 +740,27 @@ class MidiExt:
 			rg.par.Blackout.val = not bool(rg.par.Blackout.eval())
 		elif d == 'freeze':
 			rg.par.Freeze.val = not bool(rg.par.Freeze.eval())
+		elif d == 'fxkill':
+			rg.par.Fxkill.val = not bool(rg.par.Fxkill.eval())
 		elif d == 'learn':
 			rg.par.Learn.val = not bool(rg.par.Learn.eval())
 			if not rg.par.Learn.eval():
 				self.ClearPending()
 			self._schedule_learn_flash()
+		elif d.startswith('layerbypass:'):
+			idx = int(d.split(':', 1)[1])
+			if hasattr(rg, 'ToggleLayerBypass'):
+				rg.ToggleLayerBypass(idx)
+			else:
+				layer = rg.op(f'layers/layer{idx}')
+				if layer is not None:
+					layer.par.Bypass.val = not bool(layer.par.Bypass.eval())
+		elif d.startswith('fxbypass:'):
+			# fxbypass:slot on selected layer
+			slot = int(d.split(':', 1)[1])
+			layer = int(rg.par.Selectedlayer.eval())
+			if hasattr(rg, 'ToggleFxBypass'):
+				rg.ToggleFxBypass(layer, slot)
 		self.UpdateLeds()
 
 	def _do_pulse(self, dest):
@@ -737,11 +777,46 @@ class MidiExt:
 		elif d == 'double':
 			clock.Double()
 
+	def _write_layer_opacity(self, dest, u, mode, row, key, message, value):
+		"""Write layerN/opacity → layers/layerN Opacity par."""
+		rg = self._rgv()
+		# dest like layer1/opacity
+		try:
+			layer_i = int(''.join(c for c in dest.split('/')[0] if c.isdigit()))
+		except Exception:
+			return
+		if mode == 'relative':
+			layer = rg.op(f'layers/layer{layer_i}')
+			if layer is None:
+				return
+			cur = float(layer.par.Opacity.eval())
+			u = _clamp01(cur + self._relative_step(key, value))
+		if row.get('pickup') != 'live' and mode == 'absolute':
+			layer = rg.op(f'layers/layer{layer_i}')
+			if layer is None:
+				return
+			base = float(layer.par.Opacity.eval())
+			if abs(u - base) > 0.02 and not self._crossed(key, u, base):
+				self._touch[key + ':last'] = u
+				return
+			row['pickup'] = 'live'
+			self._bindings[key] = row
+		if hasattr(rg, 'SetLayerOpacity'):
+			rg.SetLayerOpacity(layer_i, u)
+		else:
+			layer = rg.op(f'layers/layer{layer_i}')
+			if layer is not None:
+				layer.par.Opacity.val = _clamp01(u)
+
 	def _do_select(self, dest):
 		# dest: layer:1 or module:gen
 		rg = self._rgv()
 		if dest.startswith('layer:'):
-			rg.par.Selectedlayer.val = int(dest.split(':', 1)[1])
+			idx = int(dest.split(':', 1)[1])
+			# Ignore layers beyond Layercount
+			if idx > int(rg.par.Layercount.eval()):
+				return
+			rg.par.Selectedlayer.val = idx
 			self._retarget_factory_pickups()
 		elif dest.startswith('module:'):
 			rg.par.Selectedmodule.val = dest.split(':', 1)[1]
@@ -809,12 +884,35 @@ class MidiExt:
 			info = led_map['freeze']
 			put('freeze', info['note'], info.get('channel', 1), 5 if freeze else 0)
 
-		# Layer select clip-stops
+		layercount = int(rg.par.Layercount.eval())
+		fxkill = bool(rg.par.Fxkill.eval()) if hasattr(rg.par, 'Fxkill') else False
+
+		# Layer select clip-stops (dark past Layercount)
 		for i in range(1, 5):
 			role = f'layer{i}'
 			if role in led_map:
 				info = led_map[role]
-				put(role, info['note'], info.get('channel', 1), 5 if layer == i else 1 if i == 1 else 0)
+				if i > layercount:
+					vel = 0
+				elif layer == i:
+					vel = 5
+				else:
+					vel = 1
+				put(role, info['note'], info.get('channel', 1), vel)
+
+		if 'fxkill' in led_map:
+			info = led_map['fxkill']
+			put('fxkill', info['note'], info.get('channel', 1), 5 if fxkill else 0)
+
+		# Layer bypass LEDs when present
+		for i in range(1, 5):
+			role = f'layerbypass{i}'
+			if role not in led_map:
+				continue
+			info = led_map[role]
+			layer_op = rg.op(f'layers/layer{i}')
+			byp = bool(layer_op.par.Bypass.eval()) if layer_op is not None else False
+			put(role, info['note'], info.get('channel', 1), 5 if byp else 0)
 
 		# Tap flash driven externally via OnBeatPulse
 		if 'tap' in led_map:
@@ -868,7 +966,7 @@ class MidiExt:
 		name = par.name
 		if name == 'Midiprofile':
 			self.LoadActiveProfile()
-		elif name in ('Learn', 'Blackout', 'Freeze', 'Selectedlayer', 'Selectedmodule'):
+		elif name in ('Learn', 'Blackout', 'Freeze', 'Fxkill', 'Layercount', 'Selectedlayer', 'Selectedmodule'):
 			if name in ('Selectedlayer', 'Selectedmodule'):
 				self._retarget_factory_pickups()
 			if name == 'Learn':

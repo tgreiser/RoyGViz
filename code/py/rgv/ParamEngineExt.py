@@ -29,9 +29,15 @@ class ParamEngineExt:
 
 	def onInitTD(self):
 		# Rebuild registry after load / re-init (custom pars persist; registry does not)
-		gen = self.ownerComp.op('layers/layer1/gen')
+		# Prefer StackExt if present (loads all bank/FX modules)
+		if hasattr(self.ownerComp, 'LoadAllModules'):
+			self.ownerComp.LoadAllModules()
+			return
+		gen = self.ownerComp.op('layers/layer1/gen_bank/slot0')
+		if gen is None:
+			gen = self.ownerComp.op('layers/layer1/gen')
 		if gen is not None and gen.op('params') is not None:
-			self.LoadModule(gen.path)
+			self.LoadModule(gen.path, addressPrefix='layers/layer1/gen')
 
 	def SanitizeChannel(self, address):
 		return _sanitize_channel(address)
@@ -257,12 +263,25 @@ class ParamEngineExt:
 		token = str(moduleToken or 'gen').lower()
 		layer = int(layerIndex or 1)
 		if token == 'master':
-			return self.ownerComp.path + '/master'
+			# Active master FX for inspector: fx1 by default
+			fx = self.ownerComp.op('master/fx1')
+			return fx.path if fx is not None else self.ownerComp.path + '/master'
 		if token == 'palette':
 			return self.ownerComp.path + '/palette'
 		if token == 'gen':
+			if hasattr(self.ownerComp, 'ActiveBankSlot'):
+				slot = self.ownerComp.ActiveBankSlot(layer)
+				if slot is not None:
+					return slot.path
+			bank0 = self.ownerComp.op(f'layers/layer{layer}/gen_bank/slot0')
+			if bank0 is not None:
+				return bank0.path
 			return f'{self.ownerComp.path}/layers/layer{layer}/gen'
 		if token.startswith('fx'):
+			# master/fxN when Selectedmodule is masterfxN later; layer FX for fx1-6
+			if token.startswith('masterfx') or token.startswith('mfx'):
+				n = ''.join(c for c in token if c.isdigit()) or '1'
+				return f'{self.ownerComp.path}/master/fx{n}'
 			return f'{self.ownerComp.path}/layers/layer{layer}/{token}'
 		return f'{self.ownerComp.path}/layers/layer{layer}/{token}'
 

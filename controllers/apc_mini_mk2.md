@@ -14,14 +14,14 @@ Indices below are **MIDI In DAT 1-based** (1–128), matching `midi_map`.
 | Scene 8 | 120 | Blackout |
 | Pad col5–8 row7–8 | 57–64 | Tap, Resync, Half, Double, Freeze, FX kill*, Mutate*, Blackout |
 
-\* noop until later phases.
+\* Mutate remains noop until Presets. FX kill is live (latch).
 
-Generator bank / scene / palette pads are stubbed as `noop` in the JSON profile.
+Generator bank: pad columns 1–4 × rows 1–4 map to `bank:layer:index` (slots 0–3). Scene / palette pads stay `noop` until those phases.
 
 ## CCs (faders)
 
 | Fader | CC | Destination |
 | --- | --- | --- |
-| 1–4 | 49–52 | Layer opacity (noop until Stack) |
+| 1–4 | 49–52 | Layer opacity |
 | 5–8 | 53–56 | Macros 1–4 |
 | 9 | 57 | Global mod amount |
