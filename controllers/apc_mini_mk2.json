@@ -1,0 +1,53 @@
+{
+  "id": "apc_mini_mk2",
+  "label": "APC mini mk2",
+  "device_in": "APC mini mk2",
+  "device_out": "APC mini mk2",
+  "channel": 1,
+  "notes": "Open the generic MIDI port. Disable Ableton's control-surface script. Numbers are MIDI In DAT 1-based (note/CC 1-128).",
+  "led": {
+    "learn": {"note": 119, "channel": 1},
+    "blackout": {"note": 120, "channel": 1},
+    "freeze": {"note": 61, "channel": 1},
+    "tap": {"note": 57, "channel": 1},
+    "layer1": {"note": 65, "channel": 1},
+    "layer2": {"note": 66, "channel": 1},
+    "layer3": {"note": 67, "channel": 1},
+    "layer4": {"note": 68, "channel": 1}
+  },
+  "bindings": [
+    {"device": "APC mini mk2", "channel": 1, "msg": "note", "number": 99, "mode": "momentary", "dest_kind": "shift", "dest": "shift", "pickup": "live", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+
+    {"device": "APC mini mk2", "channel": 1, "msg": "note", "number": 119, "mode": "trigger", "dest_kind": "latch", "dest": "learn", "pickup": "live", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+    {"device": "APC mini mk2", "channel": 1, "msg": "note", "number": 120, "mode": "trigger", "dest_kind": "latch", "dest": "blackout", "pickup": "live", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+
+    {"device": "APC mini mk2", "channel": 1, "msg": "note", "number": 65, "mode": "trigger", "dest_kind": "select", "dest": "layer:1", "pickup": "live", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+    {"device": "APC mini mk2", "channel": 1, "msg": "note", "number": 66, "mode": "trigger", "dest_kind": "select", "dest": "layer:2", "pickup": "live", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+    {"device": "APC mini mk2", "channel": 1, "msg": "note", "number": 67, "mode": "trigger", "dest_kind": "select", "dest": "layer:3", "pickup": "live", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+    {"device": "APC mini mk2", "channel": 1, "msg": "note", "number": 68, "mode": "trigger", "dest_kind": "select", "dest": "layer:4", "pickup": "live", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+
+    {"device": "APC mini mk2", "channel": 1, "msg": "note", "number": 57, "mode": "trigger", "dest_kind": "pulse", "dest": "tap", "pickup": "live", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+    {"device": "APC mini mk2", "channel": 1, "msg": "note", "number": 58, "mode": "trigger", "dest_kind": "pulse", "dest": "resync", "pickup": "live", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+    {"device": "APC mini mk2", "channel": 1, "msg": "note", "number": 59, "mode": "trigger", "dest_kind": "pulse", "dest": "half", "pickup": "live", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+    {"device": "APC mini mk2", "channel": 1, "msg": "note", "number": 60, "mode": "trigger", "dest_kind": "pulse", "dest": "double", "pickup": "live", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+    {"device": "APC mini mk2", "channel": 1, "msg": "note", "number": 61, "mode": "trigger", "dest_kind": "latch", "dest": "freeze", "pickup": "live", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+    {"device": "APC mini mk2", "channel": 1, "msg": "note", "number": 62, "mode": "trigger", "dest_kind": "noop", "dest": "fxkill", "pickup": "live", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+    {"device": "APC mini mk2", "channel": 1, "msg": "note", "number": 63, "mode": "trigger", "dest_kind": "noop", "dest": "mutate", "pickup": "live", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+    {"device": "APC mini mk2", "channel": 1, "msg": "note", "number": 64, "mode": "trigger", "dest_kind": "latch", "dest": "blackout", "pickup": "live", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+
+    {"device": "APC mini mk2", "channel": 1, "msg": "cc", "number": 49, "mode": "absolute", "dest_kind": "noop", "dest": "layer1/opacity", "pickup": "armed", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+    {"device": "APC mini mk2", "channel": 1, "msg": "cc", "number": 50, "mode": "absolute", "dest_kind": "noop", "dest": "layer2/opacity", "pickup": "armed", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+    {"device": "APC mini mk2", "channel": 1, "msg": "cc", "number": 51, "mode": "absolute", "dest_kind": "noop", "dest": "layer3/opacity", "pickup": "armed", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+    {"device": "APC mini mk2", "channel": 1, "msg": "cc", "number": 52, "mode": "absolute", "dest_kind": "noop", "dest": "layer4/opacity", "pickup": "armed", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+    {"device": "APC mini mk2", "channel": 1, "msg": "cc", "number": 53, "mode": "absolute", "dest_kind": "par", "dest": "control/mods.Macro1", "pickup": "armed", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+    {"device": "APC mini mk2", "channel": 1, "msg": "cc", "number": 54, "mode": "absolute", "dest_kind": "par", "dest": "control/mods.Macro2", "pickup": "armed", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+    {"device": "APC mini mk2", "channel": 1, "msg": "cc", "number": 55, "mode": "absolute", "dest_kind": "par", "dest": "control/mods.Macro3", "pickup": "armed", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+    {"device": "APC mini mk2", "channel": 1, "msg": "cc", "number": 56, "mode": "absolute", "dest_kind": "par", "dest": "control/mods.Macro4", "pickup": "armed", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+    {"device": "APC mini mk2", "channel": 1, "msg": "cc", "number": 57, "mode": "absolute", "dest_kind": "par", "dest": "Globalmodamount", "pickup": "armed", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+
+    {"device": "APC mini mk2", "channel": 1, "msg": "note", "number": 1, "mode": "trigger", "dest_kind": "noop", "dest": "gen_bank", "pickup": "live", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+    {"device": "APC mini mk2", "channel": 1, "msg": "note", "number": 33, "mode": "trigger", "dest_kind": "noop", "dest": "scene", "pickup": "live", "min": 0, "max": 1, "curve": "lin", "source": "factory"},
+    {"device": "APC mini mk2", "channel": 1, "msg": "note", "number": 41, "mode": "trigger", "dest_kind": "noop", "dest": "palette", "pickup": "live", "min": 0, "max": 1, "curve": "lin", "source": "factory"}
+  ],
+  "learned": []
+}

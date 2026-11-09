@@ -192,5 +192,79 @@ class ParamEngineExt:
 			return None
 		return float(par.eval())
 
+	def SetBase(self, address, value01):
+		"""Write stored base in 0-1. Returns True on success."""
+		info = self.Registry.get(address)
+		if not info:
+			return False
+		mod = op(info['modulePath'])
+		if mod is None:
+			return False
+		par = getattr(mod.par, info['parName'], None)
+		if par is None:
+			return False
+		v = max(0.0, min(1.0, float(value01)))
+		ptype = info.get('type', 'float')
+		if ptype == 'toggle':
+			par.val = 1 if v >= 0.5 else 0
+		elif ptype == 'int':
+			par.val = v
+		else:
+			par.val = v
+		return True
+
+	def SetToggle(self, address, on):
+		info = self.Registry.get(address)
+		if not info:
+			return False
+		mod = op(info['modulePath'])
+		if mod is None:
+			return False
+		par = getattr(mod.par, info['parName'], None)
+		if par is None:
+			return False
+		par.val = 1 if on else 0
+		return True
+
+	def FirePulse(self, address):
+		info = self.Registry.get(address)
+		if not info:
+			return False
+		mod = op(info['modulePath'])
+		if mod is None:
+			return False
+		par = getattr(mod.par, info['parName'], None)
+		if par is None:
+			return False
+		par.pulse()
+		return True
+
+	def FloatIntAddresses(self, modulePath):
+		"""Ordered float/int addresses for a module (factory knobs 1-8)."""
+		out = []
+		for address, info in self.Registry.items():
+			if info.get('modulePath') != modulePath:
+				continue
+			if info.get('type') not in ('float', 'int'):
+				continue
+			out.append(address)
+		# Stable order: registry insertion order, then by address
+		out.sort()
+		return out
+
+	def ResolveModulePath(self, layerIndex, moduleToken):
+		"""Map Selectedlayer + Selectedmodule to a COMP path."""
+		token = str(moduleToken or 'gen').lower()
+		layer = int(layerIndex or 1)
+		if token == 'master':
+			return self.ownerComp.path + '/master'
+		if token == 'palette':
+			return self.ownerComp.path + '/palette'
+		if token == 'gen':
+			return f'{self.ownerComp.path}/layers/layer{layer}/gen'
+		if token.startswith('fx'):
+			return f'{self.ownerComp.path}/layers/layer{layer}/{token}'
+		return f'{self.ownerComp.path}/layers/layer{layer}/{token}'
+
 	def Hello(self):
 		return 'ParamEngine'

@@ -76,3 +76,25 @@ class UiExt:
 	def onParPulse(self, par):
 		if par.name == 'Applyslot':
 			self.ApplySlot()
+		elif par.name == 'Armlearnbase':
+			self.ArmLearnBase()
+		elif par.name == 'Armlearnslot':
+			self.ArmLearnSlot()
+		elif par.name == 'Clearlearn':
+			midi = parent.Rgv.op('control/midi')
+			if midi is not None:
+				midi.ClearPending()
+
+	def ArmLearnBase(self):
+		"""Arm stub Scale base for MIDI learn."""
+		midi = parent.Rgv.op('control/midi')
+		if midi is None:
+			return False
+		return midi.ArmDest('base', STUB_ADDRESS, 'absolute')
+
+	def ArmLearnSlot(self):
+		"""Arm stub Scale slot-0 depth for MIDI learn."""
+		midi = parent.Rgv.op('control/midi')
+		if midi is None:
+			return False
+		return midi.ArmDest('slot_depth', f'{STUB_ADDRESS}#0', 'absolute')

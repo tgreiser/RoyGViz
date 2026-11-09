@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<map mode="user-define" name="User Define">
+  <controls>
+    <control id="1" kind="button" chan="2" value="46"/>
+    <control id="2" kind="button" chan="2" value="47"/>
+    <control id="3" kind="button" chan="2" value="48"/>
+    <control id="4" kind="button" chan="2" value="49"/>
+    <control id="5" kind="button" chan="2" value="50"/>
+    <control id="6" kind="button" chan="2" value="45"/>
+    <control id="7" kind="knob" chan="2" value="21"/>
+    <control id="8" kind="knob" chan="2" value="22"/>
+    <control id="9" kind="knob" chan="2" value="23"/>
+    <control id="10" kind="knob" chan="2" value="24"/>
+    <control id="11" kind="knob" chan="2" value="25"/>
+    <control id="12" kind="knob" chan="2" value="26"/>
+    <control id="13" kind="knob" chan="2" value="27"/>
+    <control id="14" kind="knob" chan="2" value="8"/>
+    <control id="15" kind="knob" chan="2" value="29"/>
+    <control id="16" kind="fader" chan="2" value="31"/>
+    <control id="17" kind="fader" chan="2" value="32"/>
+    <control id="18" kind="fader" chan="2" value="33"/>
+    <control id="19" kind="fader" chan="2" value="34"/>
+    <control id="20" kind="fader" chan="2" value="35"/>
+    <control id="21" kind="fader" chan="2" value="36"/>
+    <control id="22" kind="fader" chan="2" value="37"/>
+    <control id="23" kind="fader" chan="2" value="38"/>
+    <control id="24" kind="fader" chan="2" value="39"/>
+    <control id="25" kind="button" chan="2" value="36"/>
+    <control id="26" kind="button" chan="1" value="8"/>
+    <control id="27" kind="button" chan="2" value="37"/>
+    <control id="28" kind="button" chan="1" value="9"/>
+    <control id="29" kind="button" chan="2" value="38"/>
+    <control id="30" kind="button" chan="1" value="10"/>
+    <control id="31" kind="button" chan="2" value="39"/>
+    <control id="32" kind="button" chan="1" value="11"/>
+    <control id="33" kind="button" chan="2" value="40"/>
+    <control id="34" kind="button" chan="1" value="12"/>
+    <control id="35" kind="button" chan="2" value="41"/>
+    <control id="36" kind="button" chan="1" value="13"/>
+    <control id="37" kind="button" chan="2" value="42"/>
+    <control id="38" kind="button" chan="1" value="14"/>
+    <control id="39" kind="button" chan="2" value="43"/>
+    <control id="40" kind="button" chan="1" value="15"/>
+    <control id="41" kind="button" chan="2" value="44"/>
+    <control id="42" kind="button" chan="1" value="49"/>
+  </controls>
+</map>
