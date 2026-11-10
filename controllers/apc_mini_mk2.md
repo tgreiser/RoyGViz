@@ -14,9 +14,9 @@ Indices below are **MIDI In DAT 1-based** (1–128), matching `midi_map`.
 | Scene 8 | 120 | Blackout |
 | Pad col5–8 row7–8 | 57–64 | Tap, Resync, Half, Double, Freeze, FX kill*, Mutate*, Blackout |
 
-\* Mutate remains noop until Presets. FX kill is live (latch).
+\* Mutate randomizes the selected layer's float bases, and only while Shift is held. FX kill is live (latch).
 
-Generator bank: pad columns 1–4 × rows 1–4 map to `bank:layer:index` (slots 0–3). Scene / palette pads stay `noop` until those phases.
+Generator bank: pad columns 1–4 × rows 1–4 map to `bank:layer:index` (slots 0–3). Scene pads are columns 5–8 × rows 1–4 (notes 5–8, 13–16, 21–24, 29–32) and recall slots 0–15. Shift plus a scene pad saves that slot. Palette pads stay noop until Palettes.
 
 ## CCs (faders)
 

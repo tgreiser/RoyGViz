@@ -15,7 +15,9 @@ class StackExt:
 
 	def onInitTD(self):
 		self.ApplyAllFxChains()
-		self.LoadAllModules()
+		# LoadModule lives on ParamEngineExt. Promoted lookup throws
+		# "Cannot use an extension during its initialization" until onInitTD returns.
+		run("me.LoadAllModules()", delayFrames=1, fromOP=self.ownerComp)
 
 	def Hello(self):
 		return 'StackExt'
@@ -55,7 +57,7 @@ class StackExt:
 				return s
 		return None
 
-	def SetBankIndex(self, layerIndex, index, beats=None):
+	def SetBankIndex(self, layerIndex, index, beats=None, reset=True):
 		layer = self._layer(layerIndex)
 		if layer is None:
 			return False
@@ -66,7 +68,11 @@ class StackExt:
 		# Re-publish active gen address
 		if hasattr(self.ownerComp, 'LoadModule') and self.ActiveBankSlot(layerIndex):
 			slot = self.ActiveBankSlot(layerIndex)
-			self.ownerComp.LoadModule(slot.path, addressPrefix=f'layers/layer{int(layerIndex)}/gen')
+			self.ownerComp.LoadModule(
+				slot.path,
+				addressPrefix=f'layers/layer{int(layerIndex)}/gen',
+				reset=reset,
+			)
 			self._refresh_mod_eval()
 		return True
 
@@ -179,19 +185,19 @@ class StackExt:
 					slot = bank.op(f'slot{s}')
 					if slot is not None and slot.op('params') is not None:
 						prefix = f'layers/layer{i}/gen_bank/slot{s}'
-						pe.LoadModule(slot.path, addressPrefix=prefix)
+						pe.LoadModule(slot.path, addressPrefix=prefix, reset=False)
 						if int(round(float(layer.par.Bankindex.eval()))) == s:
-							pe.LoadModule(slot.path, addressPrefix=f'layers/layer{i}/gen')
+							pe.LoadModule(slot.path, addressPrefix=f'layers/layer{i}/gen', reset=False)
 			for slot in range(1, LAYER_FX_SLOTS + 1):
 				fx = layer.op(f'fx{slot}')
 				if fx is not None and fx.op('params') is not None:
-					pe.LoadModule(fx.path, addressPrefix=f'layers/layer{i}/fx{slot}')
+					pe.LoadModule(fx.path, addressPrefix=f'layers/layer{i}/fx{slot}', reset=False)
 		master = self.ownerComp.op('master')
 		if master is not None:
 			for slot in range(1, MASTER_FX_SLOTS + 1):
 				fx = master.op(f'fx{slot}')
 				if fx is not None and fx.op('params') is not None:
-					pe.LoadModule(fx.path, addressPrefix=f'master/fx{slot}')
+					pe.LoadModule(fx.path, addressPrefix=f'master/fx{slot}', reset=False)
 		self._refresh_mod_eval()
 
 	def _refresh_mod_eval(self):

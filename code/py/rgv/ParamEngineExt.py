@@ -28,21 +28,21 @@ class ParamEngineExt:
 		TDF.createProperty(self, 'Registry', value={}, dependable=True, readOnly=False)
 
 	def onInitTD(self):
-		# Rebuild registry after load / re-init (custom pars persist; registry does not)
-		# Prefer StackExt if present (loads all bank/FX modules)
-		if hasattr(self.ownerComp, 'LoadAllModules'):
-			self.ownerComp.LoadAllModules()
+		# Rebuild registry after load / re-init (custom pars persist; registry does not).
+		# StackExt loads every bank/FX module after init. Detect it by DAT, not a
+		# promoted member — those stay locked until onInitTD returns.
+		if self.ownerComp.op('StackExt') is not None:
 			return
 		gen = self.ownerComp.op('layers/layer1/gen_bank/slot0')
 		if gen is None:
 			gen = self.ownerComp.op('layers/layer1/gen')
 		if gen is not None and gen.op('params') is not None:
-			self.LoadModule(gen.path, addressPrefix='layers/layer1/gen')
+			self.LoadModule(gen.path, addressPrefix='layers/layer1/gen', reset=False)
 
 	def SanitizeChannel(self, address):
 		return _sanitize_channel(address)
 
-	def LoadModule(self, modulePath, addressPrefix=None):
+	def LoadModule(self, modulePath, addressPrefix=None, reset=True):
 		"""
 		Read modulePath/params, create custom pars on the module COMP,
 		register addresses. Returns list of registered address strings.
@@ -93,6 +93,13 @@ class ParamEngineExt:
 
 		registered = []
 		registry = dict(self.Registry)
+		saved = {}
+		if not reset:
+			for existing_par in mod.customPars:
+				try:
+					saved[existing_par.name] = existing_par.eval()
+				except Exception:
+					pass
 
 		for r in range(1, params.numRows):
 			token = params[r, idx_name].val.strip()
@@ -162,6 +169,12 @@ class ParamEngineExt:
 				par.default = max(0.0, min(1.0, pdef))
 				par.val = par.default
 
+			if not reset and par_name in saved:
+				try:
+					par.val = saved[par_name]
+				except Exception:
+					pass
+
 			address = f'{addressPrefix}@{module_id}/{token.lower()}'
 			# Prefer layers/... style: layer path without trailing gen duplication
 			# Plan address: layer1/gen@stub/scale
@@ -200,6 +213,9 @@ class ParamEngineExt:
 
 	def SetBase(self, address, value01):
 		"""Write stored base in 0-1. Returns True on success."""
+		presets = self.ownerComp.op('data/presets')
+		if presets is not None and hasattr(presets, 'ReleaseMorph'):
+			presets.ReleaseMorph(address)
 		info = self.Registry.get(address)
 		if not info:
 			return False

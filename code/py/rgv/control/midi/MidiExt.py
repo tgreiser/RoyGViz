@@ -504,6 +504,14 @@ class MidiExt:
 			self._do_pulse(dest)
 			return
 
+		if kind == 'scene':
+			if row['msg'] == 'note' and not _is_note_on(message, value):
+				return
+			if row['msg'] == 'cc' and float(value) <= 0:
+				return
+			self._do_scene(dest)
+			return
+
 		if kind == 'select':
 			if row['msg'] == 'note' and not _is_note_on(message, value):
 				return
@@ -762,9 +770,35 @@ class MidiExt:
 				rg.ToggleFxBypass(layer, slot)
 		self.UpdateLeds()
 
+	def _do_scene(self, dest):
+		presets = self._rgv().op('data/presets')
+		if presets is None:
+			return
+		try:
+			slot = int(str(dest).split(':')[-1])
+		except Exception:
+			return
+		if self._shift and hasattr(presets, 'SaveScene'):
+			presets.SaveScene(slot)
+		elif hasattr(presets, 'RecallScene'):
+			presets.RecallScene(slot)
+		self.UpdateLeds()
+
 	def _do_pulse(self, dest):
-		clock = self._rgv().op('control/clock')
+		rg = self._rgv()
+		presets = rg.op('data/presets')
 		d = dest.lower()
+		if d == 'prev_scene' and presets is not None and hasattr(presets, 'StepScene'):
+			presets.StepScene(-1)
+			return
+		if d == 'next_scene' and presets is not None and hasattr(presets, 'StepScene'):
+			presets.StepScene(1)
+			return
+		if d == 'mutate':
+			if self._shift and presets is not None and hasattr(presets, 'Mutate'):
+				presets.Mutate()
+			return
+		clock = rg.op('control/clock')
 		if clock is None:
 			return
 		if d == 'tap':
@@ -912,6 +946,39 @@ class MidiExt:
 			layer_op = rg.op(f'layers/layer{i}')
 			byp = bool(layer_op.par.Bypass.eval()) if layer_op is not None else False
 			put(role, info['note'], info.get('channel', 1), 5 if byp else 0)
+
+		# Scene pads: occupied lit, morphing toggles. Palette color waits.
+		scene_notes = (
+			5, 6, 7, 8,
+			13, 14, 15, 16,
+			21, 22, 23, 24,
+			29, 30, 31, 32,
+		)
+		grid = rg.op('data/presets/table_scenes')
+		flash = False
+		presets = rg.op('data/presets')
+		if presets is not None:
+			try:
+				flash = bool(int(presets.ext.PresetsExt.Sceneflash))
+			except Exception:
+				flash = False
+		if grid is not None:
+			for r in range(1, grid.numRows):
+				try:
+					slot = int(float(grid[r, 'slot'].val))
+				except Exception:
+					continue
+				if slot < 0 or slot >= len(scene_notes):
+					continue
+				occupied = str(grid[r, 'occupied'].val) in ('1', '1.0')
+				morphing = str(grid[r, 'morphing'].val) in ('1', '1.0')
+				if not occupied:
+					vel = 0
+				elif morphing and flash:
+					vel = 1
+				else:
+					vel = 5
+				put('scene%d' % slot, scene_notes[slot], 1, vel)
 
 		# Tap flash driven externally via OnBeatPulse
 		if 'tap' in led_map:
