@@ -320,6 +320,8 @@ A learned binding is address-sticky. It keeps writing that address across select
 
 Ship two default profiles so RGV plays out of the box. Each profile includes the controller-side file, not just the JSON map. `controllers/apc_mini_mk2` documents the generic MIDI layout RGV expects. `controllers/icontrols.icon` is the iMap dump: both layers, distinct CCs, on a channel the APC does not use, knobs sending absolute CC, transport buttons sending CC rather than MMC.
 
+APC mini mk2 and iCON iControls are **alternate** factory profiles for one surface at a time. They stay on separate MIDI channels so either can be connected without relearning; a show does not assume both are driven together.
+
 The APC mini mk2 is opened on its generic MIDI port. Ableton's control-surface script for that device stays disabled, so the script and RGV do not both drive LED state and fader mode.
 
 MIDI learn can override any factory binding.
@@ -346,19 +348,22 @@ With 3 layers, column 4 and clip-stop buttons 4 and 8 go dark. Pad colors are se
 
 **iCON iControls** (9 faders, 9 knobs, 18 buttons, 6 transport buttons, 4 internal layers)
 
-| Control | Layer A: inspector | Layer B: audio and modulation |
+| Control | Layer A: inspector + stack / clock | Layer B: audio and modulation |
 | --- | --- | --- |
 | Knobs 1–8 | First 8 float or int parameters of the selected module | LFO 1–8 rate |
 | Knob 9 | Mix of the selected module | Input gain |
-| Faders 1–8 | Macros 1–8 | Low, mid, high gain; attack; release; gate; onset threshold; auto-gain amount |
+| Faders 1–4 | Layer 1–4 opacity | Low, mid, high gain; attack |
+| Faders 5–8 | Macros 1–4 (macros 5–8 are UI / Learn only) | Release; gate; onset threshold; auto-gain amount |
 | Fader 9 | Global mod amount | Palette shift |
 | Top buttons 1–9 | Select module: generator, FX 1–6, master FX, palette | LFO 1–8 on/off, LFO sync on/off |
-| Bottom buttons 1–9 | Mod bypass for each of those modules | Retrigger LFO 1–8, resync clock |
-| Transport | Previous/next generator, previous/next scene, play/stop internal clock, record = MIDI learn | Same |
+| Bottom buttons 1–4 | Select layer 1–4 | (unmapped in v1) |
+| Bottom buttons 5–7 | Blackout, freeze, FX kill | (unmapped in v1) |
+| Bottom buttons 8–9 | Tap, resync | (unmapped in v1) |
+| Transport | Half / double feel, previous/next scene (noop until Presets), play/stop (noop until clock wiring), record = MIDI learn | Same |
 
 - **Pickup.** Absolute faders and knobs use soft takeover. It is stored per binding and starts on.
 - **Following selection.** Factory knobs 1–8 follow the selected module. Learned overrides stay on their address.
-- **Setup.** Load the shipped iMap file so both iControls layers have distinct CCs on a channel the APC does not use.
+- **Setup.** Program both iControls layers from `controllers/icontrols.md` (distinct CCs and bottom notes on channel 2). The `.icon` dump is non-authoritative.
 
 ## Generator modules
 

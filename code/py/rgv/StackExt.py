@@ -67,6 +67,7 @@ class StackExt:
 		if hasattr(self.ownerComp, 'LoadModule') and self.ActiveBankSlot(layerIndex):
 			slot = self.ActiveBankSlot(layerIndex)
 			self.ownerComp.LoadModule(slot.path, addressPrefix=f'layers/layer{int(layerIndex)}/gen')
+			self._refresh_mod_eval()
 		return True
 
 	def SetLayerOpacity(self, layerIndex, value01):
@@ -191,6 +192,14 @@ class StackExt:
 				fx = master.op(f'fx{slot}')
 				if fx is not None and fx.op('params') is not None:
 					pe.LoadModule(fx.path, addressPrefix=f'master/fx{slot}')
+		self._refresh_mod_eval()
+
+	def _refresh_mod_eval(self):
+		"""Publish every registered address. mod_eval keeps its last address list until Rebuild."""
+		meval = self.ownerComp.op('control/mod_eval')
+		if meval is None or not hasattr(meval, 'Rebuild'):
+			return
+		meval.Rebuild()
 
 	def OnResolutionChanged(self):
 		"""Pulse Reset on Feedback TOPs under layers/master (stubs may have none)."""
