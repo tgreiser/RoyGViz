@@ -21,6 +21,11 @@ def _clamp01(v):
 	return 0.0 if v < 0.0 else 1.0 if v > 1.0 else float(v)
 
 
+def _midi01(value):
+	"""MIDI In DAT value is the raw 0..127 byte. 1 is the first step, not full scale."""
+	return _clamp01(float(value) / 127.0)
+
+
 def _norm_msg(message):
 	m = str(message or '').lower()
 	if 'control' in m or m == 'cc':
@@ -418,12 +423,9 @@ class MidiExt:
 		return f'midi/{safe}/{msg}{int(number)}'
 
 	def _publish_bus(self, device, msg, number, value):
-		# MIDI In DAT value is typically 0-127 for notes/cc when not normalized
-		v = float(value)
-		if v > 1.0:
-			v = v / 127.0
+		v = _midi01(value)
 		chan = self._bus_channel_name(device, msg, number)
-		self._bus_vals[chan] = _clamp01(v)
+		self._bus_vals[chan] = v
 		self._ensure_schema_channel(chan)
 		self._publish_sources_chop()
 
@@ -553,10 +555,7 @@ class MidiExt:
 			return
 
 	def _incoming_01(self, row, value):
-		v = float(value)
-		if v > 1.0:
-			v = v / 127.0
-		v = _clamp01(v)
+		v = _midi01(value)
 		lo = float(row.get('min', 0))
 		hi = float(row.get('max', 1))
 		if hi <= lo:
