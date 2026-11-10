@@ -941,17 +941,17 @@ class MidiExt:
 	def OnBeatPulse(self):
 		self._tap_vel = 5
 		self.UpdateLeds()
-		run("op('{}')._clear_tap_flash()".format(self.ownerComp.path), delayMilliSeconds=80)
+		run("op('{}').ClearTapFlash()".format(self.ownerComp.path), delayMilliSeconds=80)
 
-	def _clear_tap_flash(self):
+	def ClearTapFlash(self):
 		self._tap_vel = 0
 		self.UpdateLeds()
 
 	def _schedule_learn_flash(self):
 		if bool(self._rgv().par.Learn.eval()):
-			run("op('{}')._tick_learn_flash()".format(self.ownerComp.path), delayMilliSeconds=250)
+			run("op('{}').TickLearnFlash()".format(self.ownerComp.path), delayMilliSeconds=250)
 
-	def _tick_learn_flash(self):
+	def TickLearnFlash(self):
 		if not bool(self._rgv().par.Learn.eval()):
 			self._learn_flash = False
 			self.UpdateLeds()
